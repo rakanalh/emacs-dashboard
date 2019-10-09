@@ -225,7 +225,9 @@ Optional prefix ARG says how many lines to move; default is one line."
   (interactive)
   (kill-buffer dashboard-buffer-name)
   (dashboard-insert-startupify-lists)
-  (switch-to-buffer dashboard-buffer-name))
+  (switch-to-buffer dashboard-buffer-name)
+  (if (boundp 'dashboard-hide-modeline)
+      (setq mode-line-format nil)))
 
 (defun dashboard-resize-on-hook (&optional _)
   "Re-render dashboard on window size change."
@@ -239,17 +241,26 @@ Optional prefix ARG says how many lines to move; default is one line."
 ;;;###autoload
 (defun dashboard-setup-startup-hook ()
   "Setup post initialization hooks.
-If a command line argument is provided,
-assume a filename and skip displaying Dashboard."
-  (if (< (length command-line-args) 2 )
+By default, if a command line argument is provided,
+assume a filename and skip displaying Dashboard.  If the
+user chooses, start the dashboard anyway."
+  (if (or (boundp 'dashboard-always-start) (< (length command-line-args) 2 ))
       (progn
-        (add-hook 'after-init-hook (lambda ()
-                                     ;; Display useful lists of items
-                                     (dashboard-insert-startupify-lists)))
-        (add-hook 'emacs-startup-hook '(lambda ()
-                                         (switch-to-buffer "*dashboard*")
-                                         (goto-char (point-min))
-                                         (redisplay))))))
+        (add-hook 'after-init-hook
+                  (lambda ()
+                    ;; Display useful lists of items
+                    (dashboard-insert-startupify-lists)))
+        (add-hook 'emacs-startup-hook
+                  '(lambda ()
+                     (switch-to-buffer "*dashboard*")
+                     (goto-char (point-min))
+                     (if (boundp 'dashboard-hide-modeline)
+                         (setq mode-line-format nil))
+                     (if (= (length command-line-args) 1 )
+                         (redisplay))
+                     (if (> (length command-line-args) 1 )
+                         (switch-to-buffer
+                          (nth 0 (last (split-string (nth 1 command-line-args) "/"))))))))))
 
 (provide 'dashboard)
 ;;; dashboard.el ends here
