@@ -98,9 +98,10 @@
       (when (and (not current-section-start)
                  (< elt current-position))
         (setq current-section-start elt)))
-    (goto-char (if (eq current-position current-section-start)
-                   previous-section-start
-                 current-section-start))))
+    (goto-char (or (when (eq current-position current-section-start)
+                     previous-section-start)
+                   current-section-start
+                   current-position))))
 
 (defun dashboard-next-section ()
   "Navigate forward to next section."
